@@ -16,6 +16,8 @@ import os
 from PIL import Image 
 import png 
 import dicom
+import re
+
 
 
 
@@ -514,11 +516,27 @@ def savepic(save_path,extension,img_source,lab_source, pred_list , result_list, 
 	    # num x pred : 1 label x
 	    
 		        
-                
+
+def sort_by_number(list_):
+    
+    def atoi(text):
+        return int(text) if text.isdigit() else text
+
+    def natural_keys(text):
+        return [ atoi(c) for c in re.split('(\d+)', text) ]
+    ret_list=list_.sort(key = natural_keys)
+    return ret_list
 
     
 
+def convert_one_hot_vector(np_):
 
+    length=len(set(np_))
+    ret_np=np.zeros(shape = [len(np_) , length])
+
+    for i in range(len(np_)):
+        ret_np[i , np_[i]] =1
+    return ret_np
 
 
 

@@ -1,6 +1,6 @@
 
 # coding: utf-8
-# modified : 2016 / 10 / 30
+# modified : 2017 / 2 / 7
 # In[25]:
 # in pic2numpy_TVT resize function has prob ! have to fix!!!!
 # in savefic func name has to be change to more inspective ,  and savefic have prob 
@@ -542,4 +542,121 @@ def convert_one_hot_vector(np_):
 
 
 
+def modified_pic2numpy_TVT(path1,path2,train_rate , val_rate ,save_path ,img_row,img_col, \
+                  color_ch, ):
+    
+    """
+    path 1 은 normal data 
+    path 2~7은 abnormal data
+    
+    이 함수는 갯수가 동일하게 맞춰집니다.
+    
+    """
+    n_class=2
+    
+    list_path_1=crawl_folder(path1)
+    list_path_2=crawl_folder(path2)
+    
+    n_list_1 =len(list_path_1)                            
+    n_list_2 =len(list_path_2)
+                            
+    print "the number of 1th group's element is ",n_list_1
+    print "the number of 2th group's element is ",n_list_2
+    
+                            
+    #balacne 2 group's size 
+    if n_list_1 > n_list_2:
+        list_path_1=random.sample(list_path_1,n_list_1)[0:n_list_2]
+    elif n_list_2 > n_list_1:
+        list_path_2=random.sample(list_path_2 ,n_list_2 )[0:n_list_1]
+    elif n_list_2 == n_list_1:
+        print "2 group's the number of element is same!"
+    else:
+        "it's weired check code!"
+    #dic type 변수를 만들어 거기에다가 path 와 
+    dic_path_lab_all={}
+    for ele in list_path_1:
+        dic_path_lab_all[ele]=1
+    for ele in list_path_2:
+        dic_path_lab_all[ele]=2
+    
+                            
+                            
+    #value 값이 2인 element들을 파악합니다.
+    list_path_all=[]                
+    list_path_all.extend(list_path_1)
+    list_path_all.extend(list_path_2)
+    list_path_all=random.sample(list_path_all , len(list_path_all))
+    
+    
+    n_list_path_all = len(list_path_all)
+    n_train =int(train_rate*n_list_path_all) # number of train 
+    n_val = int (val_rate*n_list_path_all) #number of val
+    n_test= n_list_path_all-(n_train+n_val)
+    print '모든 사진 갯수 ' , n_list_path_all
+    print 'training  개수 : ' , n_train
+    print 'validation  개수 : ',n_val
+    print 'test  개수 : ',n_test
+    
+    train_count =0
+    val_count=0
+    test_count=0
+    
+    np_train=np.zeros([n_train , img_row , img_col , color_ch])
+    np_train_lab = np.zeros([n_train , n_class])
+    np_val=np.zeros([n_val , img_row , img_col , color_ch])
+    np_val_lab = np.zeros([n_val , n_class])
+    np_test=np.zeros([n_test , img_row , img_col , color_ch])
+    np_test_lab = np.zeros([n_test , n_class])
+	
+    for ele in list_path_all:
+    #define img_np 
+        if ".dcm" in ele:
+            img=dicom.read_file(ele)
+            img_np=ds.pixel_array
+        elif ".bmp" in ele: 
+            img=Image.open(ele)
+            img=img.resize((img_row , img_col) , Image.ANTIALIAS)
+            img_np= np.array(img)
+        elif ".jpg" in ele: 
+            img=Image.open(ele)
+            img=img.resize((img_row , img_col) , Image.ANTIALIAS)
+            img_np= np.array(img)
+
+        elif ".png" in ele:
+            img=Image.open(ele)
+            img=img.resize((img_row , img_col) , Image.ANTIALIAS)
+            img_np= np.array(img)
+        if len(np.shape(img_np))==2:
+            img_np = np.expand_dims(img_np,2)
+            
+    #define lab_np 
+    #img=mpimg.imread('stinkbug.png')
+        if dic_path_lab_all[ele]==1:
+            lab_np=0
+        elif dic_path_lab_all[ele]==2:
+            lab_np=1
+        
+        if train_count < n_train:
+            np_train[train_count] =img_np
+            np_train_lab[train_count , lab_np:lab_np+1] = 1
+            train_count+=1
+
+        elif val_count < n_val:
+            np_val[val_count] = img_np
+            np_val_lab[val_count , lab_np:lab_np+1]=1
+            val_count +=1
+
+        elif test_count < n_test:
+            np_test[test_count] = img_np
+            np_test_lab[test_count , lab_np:lab_np+1] = 1
+            test_count +=1 
+            
+    np.save(save_path+'/'+'train_img',np_train)
+    np.save(save_path+'/'+'train_lab',np_train_lab)
+    np.save(save_path+'/'+'val_img',np_val)
+    np.save(save_path+'/'+'val_lab',np_val_lab)
+    np.save(save_path+'/'+'test_img',np_test)
+    np.save(save_path+'/'+'test_lab',np_test_lab)
+    
 
